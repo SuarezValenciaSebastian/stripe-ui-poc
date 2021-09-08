@@ -14,8 +14,15 @@ import useRoutes from "hooks/useRoutes";
 const PaymentInfo = () => {
   const customerId = useSelector((state: RootState) => state.customer.id);
   const productId = useSelector((state: RootState) => state.cart.product.id);
+
   const alert = useAlerts();
   const routes = useRoutes();
+
+  const [clientSecret, setClientSecret] = useState("");
+  const [processing, setProcessing] = useState(false);
+
+  const stripe = useStripe();
+  const elements = useElements();
 
   useEffect(() => {
     async function fetch() {
@@ -32,12 +39,6 @@ const PaymentInfo = () => {
     fetch();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const [clientSecret, setClientSecret] = useState("");
-  const [processing, setProcessing] = useState(false);
-
-  const stripe = useStripe();
-  const elements = useElements();
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
