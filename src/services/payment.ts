@@ -9,4 +9,19 @@ function paymentService(id: string, amount: number) {
   });
 }
 
-export default paymentService;
+function createPaymentIntentService(productId: string) {
+  return axios.post(`${URL}/payment-intents`, { productId });
+}
+
+function createSubscriptionIntentService(
+  customerId: string,
+  productId: string
+) {
+  return axios.post(`${URL}/subscription-intents`, { customerId, productId });
+}
+
+export {
+  paymentService,
+  createPaymentIntentService,
+  createSubscriptionIntentService,
+};

@@ -1,60 +1,84 @@
-import { FormEvent } from "react";
+import { FormEvent, useEffect, useState } from "react";
+import { useSelector } from "react-redux";
+import { RootState } from "redux/store";
 import { CardElement, useElements, useStripe } from "@stripe/react-stripe-js";
-import { useSnackbar } from "notistack";
 import Button from "@material-ui/core/Button";
 import Grid from "@material-ui/core/Grid";
 import { Typography } from "@material-ui/core";
-import Card from "../../Card";
-import paymentService from "../../../services/payment";
+import LinearProgress from "@material-ui/core/LinearProgress";
+import Card from "components/shared/Card";
+import useAlerts from "hooks/useAlerts";
+import { createSubscriptionIntentService } from "services/payment";
+import useRoutes from "hooks/useRoutes";
 
 const PaymentInfo = () => {
+  const customerId = useSelector((state: RootState) => state.customer.id);
+  const productId = useSelector((state: RootState) => state.cart.product.id);
+  const alert = useAlerts();
+  const routes = useRoutes();
+
+  useEffect(() => {
+    async function fetch() {
+      try {
+        const { data } = await createSubscriptionIntentService(
+          customerId,
+          productId
+        );
+        setClientSecret(data.clientSecret);
+      } catch (error) {
+        alert.error("Something went wrong", error);
+      }
+    }
+    fetch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const [clientSecret, setClientSecret] = useState("");
+  const [processing, setProcessing] = useState(false);
+
   const stripe = useStripe();
   const elements = useElements();
-  const { enqueueSnackbar } = useSnackbar();
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
-    const card = elements?.getElement(CardElement);
+    setProcessing(true);
+    if (!elements || !stripe) {
+      alert.error(
+        "Something went wrong with this page, try again later or contact support",
+        { message: "'stripe' or 'elements' were not ready yet" }
+      );
+      return;
+    }
+
+    const card = elements.getElement(CardElement);
+
     if (!card) {
-      enqueueSnackbar("This page has an error try again, or contact support", {
-        variant: "error",
-      });
-      console.error({ type: "ERROR", code: "1001" });
+      alert.error(
+        "Something went wrong with this page, try again later or contact support",
+        "'Card' component is undefined"
+      );
       return;
     }
-    if (!stripe) {
-      enqueueSnackbar("This page has an error try again, or contact support", {
-        variant: "error",
-      });
-      return;
-    }
-    const { error, paymentMethod } = await stripe.createPaymentMethod({
-      type: "card",
-      card,
+
+    const payload = await stripe?.confirmCardPayment(clientSecret, {
+      payment_method: {
+        card,
+      },
     });
 
-    if (error) {
-      enqueueSnackbar(`An error ocurred during the payment: ${error.message}`, {
-        variant: "error",
-      });
-      return;
+    if (payload.error) {
+      alert.error(payload.error.message, payload.error);
+    } else {
+      alert.success("Successful purchase");
     }
 
-    if (!paymentMethod) {
-      enqueueSnackbar("This page has an error try again, or contact support", {
-        variant: "error",
-      });
-      return;
-    }
-
-    const { data } = await paymentService(paymentMethod.id, 5914000);
-    console.log(data);
-    enqueueSnackbar("Successful process", { variant: "success" });
-    console.log(paymentMethod);
+    setProcessing(false);
+    routes.marketplace();
   };
 
   return (
     <Card>
+      {processing && <LinearProgress />}
       <Typography variant="h6">Payment information</Typography>
       <form onSubmit={handleSubmit}>
         <Grid container spacing={2}>
@@ -66,6 +90,7 @@ const PaymentInfo = () => {
               type="submit"
               color="primary"
               variant="contained"
+              disabled={processing}
               disableElevation
               fullWidth
             >

@@ -1,0 +1,14 @@
+{
+  "dashboard": {
+    "path": "/"
+  },
+  "marketplace": {
+    "path": "/"
+  },
+  "checkout": {
+    "path": "/checkout"
+  },
+  "login": {
+    "path": "/login"
+  }
+}

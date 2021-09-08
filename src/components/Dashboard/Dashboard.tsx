@@ -2,7 +2,7 @@ import { FunctionComponent } from "react";
 import styled from "styled-components";
 import MuiToolBar from "@material-ui/core/Toolbar";
 import MuiContainer from "@material-ui/core/Container";
-import Toolbar from "../AppBar";
+import Toolbar from "components/AppBar";
 
 const Container = styled.div`
   display: flex;
